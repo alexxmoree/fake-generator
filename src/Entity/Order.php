@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\OrderRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
@@ -14,99 +15,68 @@ class Order
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $countryIso = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $order_method = null;
-
-    #[ORM\Column(length: 255)]
-    private ?string $order_type = null;
-
-    #[ORM\Column(length: 255)]
-    private ?string $order_site = null;
-
-    #[ORM\Column]
-    private ?int $order_id = null;
-
     #[ORM\ManyToOne(inversedBy: 'orders')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?customer $customer = null;
+    private Customer $customer;
 
+    #[ORM\Column(length: 255)]
+    private ?string $status = null;
+
+    #[ORM\Column]
+    private ?\DateTimeImmutable $created_at = null;
+
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    private ?string $total_amount = null;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getCountryIso(): ?string
-    {
-        return $this->countryIso;
-    }
-
-    public function setCountryIso(string $countryIso): static
-    {
-        $this->countryIso = $countryIso;
-
-        return $this;
-    }
-
-    public function getOrderMethod(): ?string
-    {
-        return $this->order_method;
-    }
-
-    public function setOrderMethod(?string $order_method): static
-    {
-        $this->order_method = $order_method;
-
-        return $this;
-    }
-
-    public function getOrderType(): ?string
-    {
-        return $this->order_type;
-    }
-
-    public function setOrderType(string $order_type): static
-    {
-        $this->order_type = $order_type;
-
-        return $this;
-    }
-
-    public function getOrderSite(): ?string
-    {
-        return $this->order_site;
-    }
-
-    public function setOrderSite(string $order_site): static
-    {
-        $this->order_site = $order_site;
-
-        return $this;
-    }
-
-    public function getOrderId(): ?int
-    {
-        return $this->order_id;
-    }
-
-    public function setOrderId(int $order_id): static
-    {
-        $this->order_id = $order_id;
-
-        return $this;
-    }
-
-    public function getCustomer(): ?customer
+    public function getCustomer(): ?Customer
     {
         return $this->customer;
     }
 
-    public function setCustomer(?customer $customer): static
+    public function setCustomer(Customer $customer): static
     {
         $this->customer = $customer;
+
+        return $this;
+    }
+
+    public function getStatus(): ?string
+    {
+        return $this->status;
+    }
+
+    public function setStatus(string $status): static
+    {
+        $this->status = $status;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->created_at;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $created_at): static
+    {
+        $this->created_at = $created_at;
+
+        return $this;
+    }
+
+    public function getTotalAmount(): ?string
+    {
+        return $this->total_amount;
+    }
+
+    public function setTotalAmount(string $total_amount): static
+    {
+        $this->total_amount = $total_amount;
 
         return $this;
     }

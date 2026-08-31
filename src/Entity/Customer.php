@@ -21,14 +21,11 @@ class Customer
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $last_name = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 20)]
     private ?string $phone = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 255)]
     private ?string $email = null;
-
-    #[ORM\Column]
-    private ?int $customer_id = null;
 
     /**
      * @var Collection<int, Order>
@@ -94,18 +91,6 @@ class Customer
         return $this;
     }
 
-    public function getCustomerId(): ?int
-    {
-        return $this->customer_id;
-    }
-
-    public function setCustomerId(int $customer_id): static
-    {
-        $this->customer_id = $customer_id;
-
-        return $this;
-    }
-
     /**
      * @return Collection<int, Order>
      */
@@ -126,13 +111,7 @@ class Customer
 
     public function removeOrder(Order $order): static
     {
-        if ($this->orders->removeElement($order)) {
-            // set the owning side to null (unless already changed)
-            if ($order->getCustomer() === $this) {
-                $order->setCustomer(null);
-            }
-        }
-
+        $this->orders->removeElement($order);
         return $this;
     }
 }
