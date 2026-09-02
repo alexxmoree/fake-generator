@@ -33,6 +33,9 @@ class Customer
     #[ORM\OneToMany(targetEntity: Order::class, mappedBy: 'customer', orphanRemoval: true)]
     private Collection $orders;
 
+    #[ORM\Column]
+    private ?int $crm_id = null;
+
     public function __construct()
     {
         $this->orders = new ArrayCollection();
@@ -112,6 +115,18 @@ class Customer
     public function removeOrder(Order $order): static
     {
         $this->orders->removeElement($order);
+        return $this;
+    }
+
+    public function getCrmId(): ?int
+    {
+        return $this->crm_id;
+    }
+
+    public function setCrmId(int $crm_id): static
+    {
+        $this->crm_id = $crm_id;
+
         return $this;
     }
 }
