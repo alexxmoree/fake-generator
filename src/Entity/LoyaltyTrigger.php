@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Repository\LoyaltyTriggerRepository;
 use Doctrine\ORM\Mapping as ORM;
+use App\Enum\LoyaltyTriggerType;
+use Doctrine\DBAL\Types\Types;
 
 #[ORM\Entity(repositoryClass: LoyaltyTriggerRepository::class)]
 class LoyaltyTrigger
@@ -16,8 +18,8 @@ class LoyaltyTrigger
     #[ORM\Column]
     private ?int $points_earned = null;
 
-    #[ORM\Column(length: 50)]
-    private ?string $type = null;
+    #[ORM\Column(type: Types::STRING, enumType: LoyaltyTriggerType::class)]
+    private LoyaltyTriggerType $type;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $created_at = null;
@@ -43,12 +45,12 @@ class LoyaltyTrigger
         return $this;
     }
 
-    public function getType(): ?string
+    public function getType(): LoyaltyTriggerType
     {
         return $this->type;
     }
 
-    public function setType(string $type): static
+    public function setType(LoyaltyTriggerType $type): static
     {
         $this->type = $type;
 
