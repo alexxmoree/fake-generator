@@ -26,3 +26,20 @@ services:
     Faker\Generator:
         factory: ['Faker\Factory', 'create']
         arguments: ['ru_RU']
+
+    RetailCrm\Api\Client:
+        class: RetailCrm\Api\Client
+        factory: ['RetailCrm\Api\Factory\SimpleClientFactory', 'createClient']
+        arguments:
+            - '%env(RETAILCRM_URL)%'
+            - '%env(RETAILCRM_API_KEY)%'
+
+    App\Service\FakeData\CustomerGenerator:
+        arguments:
+            $site: '%env(RETAILCRM_SITE)%'
+
+    App\Service\FakeData\OrderGenerator:
+        arguments:
+            $site: '%env(RETAILCRM_SITE)%'
+            $orderType: '%env(RETAILCRM_ORDER_TYPE)%'
+            $orderCountry: '%env(RETAILCRM_ORDER_COUNTRY)%'

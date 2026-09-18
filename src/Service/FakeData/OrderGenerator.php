@@ -2,29 +2,55 @@
 
 namespace App\Service\FakeData;
 
-use App\Entity\Order;
-use App\Entity\Customer;
+use App\Dto\CustomerData;
 use Faker\Generator;
 
 class OrderGenerator
-{
-    private Generator $faker;
+{   
+    private string $site;
+    private string $orderType;
+    private string $orderCountry;
 
-    public function __construct(Generator $faker)
-    {
-        $this->faker = $faker;
+    public function __construct(
+        private Generator $faker,
+        string $site,
+        string $orderType,
+        string $orderCountry
+    ) {
+        $this->site = $site;
+        $this->orderType = $orderType;
+        $this->orderCountry = $orderCountry;
     }
 
-    public function createOrder(Customer $customer): Order
+    public function createOrder(int $customerCrmId, CustomerData $customer): array
     {
-        $order = new Order;
-        $order->setCustomer($customer);
-        $order->setStatus($this->faker->randomElement(['complete', 'new', 'cancel-other']));
-        $order->setTotalAmount((string) $this->faker->randomFloat(2, 1000, 5000));
-        $order->setCreatedAt(\DateTimeImmutable::createFromMutable(
-            $this->faker->dateTimeBetween('-1 year', 'now')
-        ));
+        return [
+            'customerId' => $customerCrmId,
+            'firstName'  => $customer->firstName,
+            'lastName'   => $customer->lastName,
+            'email'      => $customer->email,
+            'phone'      => $customer->phone,
+            'countryIso' => $this->orderCountry,
+            'orderType'  => $this->orderType,
+            'site'       => $this->site,
+            'status'     => $this->faker->randomElement(['new', 'complete', 'cancel-other']),
+            'orderMethod'=> $this->faker->randomElement(['shopping-cart', 'phone', 'messenger']),
+            'createdAt'  => $this->faker->dateTimeBetween('-1 year', 'now')->format('Y-m-d H:i:s'),
+            'items'      => $this->generateItems(),
+        ];
+    }
 
-        return $order;
+    private function generateItems(): array
+    {
+        $items = [];
+        $count = $this->faker->numberBetween(1, 3);
+        for ($i = 0; $i < $count; $i++) {
+            $items[] = [
+                'productName' => $this->faker->bothify('Товар ##??'),
+                'quantity'    => $this->faker->numberBetween(1, 5),
+                'price'       => (float) $this->faker->randomFloat(2, 100, 5000),
+            ];
+        }
+        return $items;
     }
 }

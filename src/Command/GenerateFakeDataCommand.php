@@ -2,75 +2,93 @@
 
 namespace App\Command;
 
-use App\Entity\Customer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Input\InputOption;
 use App\Service\FakeData\CustomerGenerator;
 use App\Service\FakeData\OrderGenerator;
-use App\Service\FakeData\LoyaltyTriggerGenerator;
+use App\Service\RetailCrmClient;
+
 
 #[AsCommand(
     name: 'app:generate-fake-data',
     description: 'Create customers and orders',
 )]
+
 class GenerateFakeDataCommand extends Command
 {   
-    private EntityManagerInterface $em;
+    private const PROGRESS_FORMAT = ' %current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s%';
+
     private CustomerGenerator $customerGenerator;
     private OrderGenerator $orderGenerator;
-    private LoyaltyTriggerGenerator $loyaltyTriggerGenerator;
+    private RetailCrmClient $retailCrmClient;
 
     public function __construct(
-        EntityManagerInterface $em,
         CustomerGenerator $customerGenerator,
         OrderGenerator $orderGenerator,
-        LoyaltyTriggerGenerator $loyaltyTriggerGenerator
+        RetailCrmClient $retailCrmClient
     ) {
         parent::__construct();
-        $this->em = $em;
         $this->customerGenerator = $customerGenerator;
         $this->orderGenerator = $orderGenerator;
-        $this->loyaltyTriggerGenerator = $loyaltyTriggerGenerator;
+        $this->retailCrmClient = $retailCrmClient;
+    }
+
+    protected function configure(): void
+    {
+        $this
+            ->addOption(
+                'quantity-generations',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Количество генераций',
+                10
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
-    {
-        for ($i = 1; $i <= 200; $i++) {
+    {   
+        $quantityGenerations = (int) $input->getOption('quantity-generations');
+        $output->writeln('Создание клиентов:');
+        $customerProgress = new ProgressBar($output, $quantityGenerations);
+        $customerProgress->setFormat(self::PROGRESS_FORMAT);
+        $customerProgress->start();
+
+        $customers = [];
+
+        for ($i = 1; $i <= $quantityGenerations; $i++) {
             $customer = $this->customerGenerator->createCustomer();
+            $crmId = $this->retailCrmClient->createCustomer($customer);
 
-            $this->em->persist($customer);
-
-            if ($i % 50 === 0) {
-                $this->em->flush();
-                $this->em->clear();
+            if ($crmId !== null) {
+                $customers[] = ['crmId' => $crmId, 'data' => $customer];
             }
+            $customerProgress->advance();
+        }
+        $customerProgress->finish();
+        $output->writeln('');
+
+        if (empty($customers)) {
+            $output->writeln('<error>No customers were created</error>');
+            return Command::FAILURE;
         }
 
-        $this->em->flush();
+        $output->writeln('Создание заказов:');
+        $orderProgress = new ProgressBar($output, count($customers));
+        $orderProgress->setFormat(self::PROGRESS_FORMAT);
+        $orderProgress->start();
 
-        $allCustomers = $this->em->getRepository(Customer::class)->findAll();
+        foreach ($customers as $entry) {
+            $orderData = $this->orderGenerator->createOrder($entry['crmId'], $entry['data']);
+            $orderCrmId = $this->retailCrmClient->createOrder($orderData);
 
-        for ($i = 1; $i <= 500; $i++) {
-            $customer = $allCustomers[array_rand($allCustomers)];
-            $order = $this->orderGenerator->createOrder($customer);
-
-            $this->em->persist($order);
-
-            if ($i % 2 === 0 ) {
-                $loyaltyTrigger = $this->loyaltyTriggerGenerator->createLoyaltyTrigger($order);
-                $this->em->persist($loyaltyTrigger);
-            }
-
-            if ($i % 50 === 0) {
-                $this->em->flush();
-            }
+            $orderProgress->advance();
         }
-        
-        $this->em->flush();
-        $this->em->clear();
+        $orderProgress->finish();
+        $output->writeln('');
 
         return Command::SUCCESS;
     }
